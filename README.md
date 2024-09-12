@@ -2,6 +2,18 @@
 
 This project provides a Docker container that combines multiple Tor instances with HAProxy for load balancing and Privoxy for HTTP proxy functionality. The setup is based on Alpine Linux.
 
+A Docker image for this project is automatically built and pushed to GitHub Container Registry (ghcr.io) via GitHub Actions. You can pull the latest image using:
+
+```sh
+docker pull ghcr.io/perennialtech/multi-tor-proxy:latest
+```
+
+To build the image locally:
+
+```sh
+docker build -t multi-tor-proxy .
+```
+
 ## Architecture
 
 The container orchestrates the following components:
@@ -130,14 +142,6 @@ docker compose down -v
 ## Data Persistence
 
 Tor data for all instances is stored in a Docker volume named `multi-tor-proxy_tor-data`, persisting Tor's state across container restarts.
-
-## Building
-
-To build the image locally without using Docker Compose:
-
-```sh
-docker build -t multi-tor-proxy .
-```
 
 ## License
 
