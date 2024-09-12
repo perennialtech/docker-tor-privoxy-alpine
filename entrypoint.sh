@@ -54,11 +54,11 @@ generate_tor_config() {
     cat << EOF > "$config_file"
 SocksPort 905$instance
 DNSPort 535$instance
-BridgeRelay ${TOR_RELAY}
-Nickname ${TOR_NICKNAME}$instance
 RelayBandwidthRate ${TOR_BANDWIDTH_RATE}
 RelayBandwidthBurst ${TOR_BANDWIDTH_BURST}
-ExitPolicy ${TOR_EXIT_POLICY}
+NewCircuitPeriod ${TOR_NEW_CIRCUIT_PERIOD}
+MaxCircuitDirtiness ${TOR_MAX_CIRCUIT_DIRTINESS}
+CircuitBuildTimeout ${TOR_CIRCUIT_BUILD_TIMEOUT}
 DataDirectory /var/lib/tor/$instance
 Log notice stdout
 EOF
