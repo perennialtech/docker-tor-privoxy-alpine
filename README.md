@@ -15,18 +15,18 @@ graph LR
 
 ## Components
 
-- **Base Image**: Alpine Linux 3.7
+- **Base Image**: Alpine Linux 3.20.3
 - **Tor**: Onion routing network for secure internet access
 - **Privoxy**: Non-caching web proxy with advanced filtering capabilities
 - **runit**: Init scheme and service supervision
-- **tini**: A minimal init system for containers
+- **Docker's built-in init**: Used for process management within the container
 
 ## Usage
 
 To run the container with default settings:
 
 ```bash
-docker run -d -p 8118:8118 -p 9050:9050 rdsubhas/tor-privoxy-alpine
+docker compose up -d
 ```
 
 To use the proxy:
@@ -43,12 +43,11 @@ See `.env.example` for available configuration options.
 
 The Dockerfile specifies the following:
 
-- Base image: Alpine 3.7
+- Base image: Alpine 3.20.3
 - Exposed ports: 8118 and 9050
-- Installed packages: privoxy, tor, runit, tini
+- Installed packages: privoxy, tor, runit
 - Copies service configurations from `service/` to `/etc/service/`
 - Sets default environment variables for Privoxy and Tor configuration
-- Entrypoint: tini
 - CMD: runsvdir /etc/service
 
 ### Privoxy

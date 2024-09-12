@@ -5,13 +5,11 @@ EXPOSE 8118 9050
 ARG PRIVOXY_VERSION=3.0.34-r2
 ARG TOR_VERSION=0.4.8.12-r0
 ARG RUNIT_VERSION=2.1.2-r7
-ARG TINI_VERSION=0.19.0-r3
 
 RUN apk --no-cache add \
   privoxy=${PRIVOXY_VERSION} \
   tor=${TOR_VERSION} \
-  runit=${RUNIT_VERSION} \
-  tini=${TINI_VERSION} && \
+  runit=${RUNIT_VERSION} && \
   adduser -D -u 1000 toruser
 
 # Default Privoxy configuration
@@ -42,5 +40,4 @@ USER toruser
 
 COPY service /etc/service/
 
-ENTRYPOINT ["tini", "--"]
 CMD ["runsvdir", "/etc/service"]

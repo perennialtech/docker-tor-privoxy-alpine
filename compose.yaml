@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    init: true
     ports:
       - 8118:8118 # Privoxy HTTP(S) proxy
       - 9050:9050 # Tor SOCKS5 proxy
