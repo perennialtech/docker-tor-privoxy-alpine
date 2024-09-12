@@ -7,14 +7,12 @@ ARG TOR_VERSION=0.4.8.12-r0
 ARG GOSU_VERSION=1.17-r5
 ARG HAPROXY_VERSION=2.8.10-r0
 
-# NOTE: Assigning UIDs and GID manually to avoid conflicts with tor UID=101
+# Manual UID/GID assignment to prevent conflicts with tor's default UID of 101
 RUN addgroup -g 10001 privoxy && \
-    adduser -D -u 10001 -G privoxy privoxy
-
-RUN addgroup -g 10002 haproxy && \
-    adduser -D -u 10002 -G haproxy haproxy
-
-RUN addgroup -g 10003 tor && \
+    adduser -D -u 10001 -G privoxy privoxy && \
+    addgroup -g 10002 haproxy && \
+    adduser -D -u 10002 -G haproxy haproxy && \
+    addgroup -g 10003 tor && \
     adduser -D -u 101 -G tor tor
 
 RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
