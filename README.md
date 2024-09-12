@@ -12,14 +12,22 @@ The container orchestrates the following components:
 
 ```mermaid
 graph LR
-    Client[Client] -->|HTTP/HTTPS| Privoxy[Privoxy :8118]
-    Privoxy -->|SOCKS5| HAProxy[HAProxy :8050]
-    HAProxy -->|SOCKS5| Tor1[Tor Instance 1]
-    HAProxy -->|SOCKS5| Tor2[Tor Instance 2]
-    HAProxy -->|SOCKS5| TorN[Tor Instance N]
-    Tor1 --> Internet[Internet]
-    Tor2 --> Internet
-    TorN --> Internet
+    Client[Client]
+    Privoxy[Privoxy :8118]
+    HAProxy[HAProxy :8050]
+    Tor1[Tor Instance 1]
+    Tor2[Tor Instance 2]
+    TorN[Tor Instance N]
+    Internet[Internet]
+
+    Client <-->|HTTP/HTTPS| Privoxy
+    Privoxy <-->|SOCKS5| HAProxy
+    HAProxy <-->|SOCKS5| Tor1
+    HAProxy <-->|SOCKS5| Tor2
+    HAProxy <-->|SOCKS5| TorN
+    Tor1 <--> Internet
+    Tor2 <--> Internet
+    TorN <--> Internet
 ```
 
 ## Components
