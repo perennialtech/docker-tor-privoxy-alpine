@@ -20,7 +20,7 @@ graph LR
     TorN[Tor Instance N]
     Internet[Internet]
 
-    Client <-->|HTTP/HTTPS| Privoxy
+    Client <-->|HTTP| Privoxy
     Privoxy <-->|SOCKS5| HAProxy
     HAProxy <-->|SOCKS5| Tor1
     HAProxy <-->|SOCKS5| Tor2
@@ -42,7 +42,7 @@ graph LR
 
 - Multiple Tor instances for improved performance and anonymity
 - HAProxy load balancing among Tor instances
-- Privoxy for HTTP/HTTPS proxy functionality and advanced filtering
+- Privoxy for HTTP proxy functionality and advanced filtering
 - Persistent Tor data storage using Docker volumes
 - Configurable via environment variables
 - Non-root execution of Tor and Privoxy processes using gosu
@@ -72,10 +72,16 @@ graph LR
 
    This command will build the image if it doesn't exist and start the container in detached mode.
 
-4. Use the proxy:
+4. Use the Privoxy HTTP proxy:
 
    ```sh
-   curl --proxy 127.0.0.1:8118 https://check.torproject.org/
+   curl --proxy http://127.0.0.1:8118 https://am.i.mullvad.net/json
+   ```
+
+5. Use the HAProxy SOCKS5 proxy:
+
+   ```sh
+   curl --proxy socks5://127.0.0.1:8050 https://am.i.mullvad.net/json
    ```
 
 ## Configuration
@@ -117,7 +123,7 @@ docker compose down -v
 
 ## Exposed Ports
 
-- `8118`: Privoxy HTTP(S) proxy
+- `8118`: Privoxy HTTP proxy
 - `8050`: HAProxy SOCKS5 proxy (load balances to multiple Tor instances)
 
 ## Data Persistence
