@@ -37,44 +37,7 @@ curl --proxy localhost:8118 https://www.example.com
 
 ## Configuration
 
-### Privoxy Configuration
-
-You can customize the Privoxy configuration using environment variables. Here are the available options:
-
-- `PRIVOXY_LISTEN_ADDRESS`: The address and port Privoxy listens on (default: 0.0.0.0:8118)
-- `PRIVOXY_FORWARD_SOCKS5`: The SOCKS5 proxy to forward to (default: /localhost:9050)
-- `PRIVOXY_TOGGLE`: Enable/disable filtering (default: 1)
-- `PRIVOXY_ENABLE_REMOTE_TOGGLE`: Allow remote toggling (default: 0)
-- `PRIVOXY_ENABLE_EDIT_ACTIONS`: Allow editing actions (default: 0)
-- `PRIVOXY_ENABLE_COMPRESSION`: Enable compression (default: 0)
-- `PRIVOXY_ACCEPT_INTERCEPTED_REQUESTS`: Accept intercepted requests (default: 0)
-- `PRIVOXY_BUFFER_LIMIT`: Limit on buffer size (default: 4096)
-- `PRIVOXY_ENABLE_PROXY_AUTHENTICATION_FORWARDING`: Enable proxy authentication forwarding (default: 0)
-
-### Tor Configuration
-
-You can customize the Tor configuration using environment variables. Here are the available options:
-
-- `TOR_SOCKS_PORT`: The port for Tor's SOCKS proxy (default: 9050)
-- `TOR_CONTROL_PORT`: The port for Tor's control protocol (default: 9051)
-- `TOR_DNS_PORT`: The port for Tor's DNS server (default: 5353)
-- `TOR_RELAY`: Enable/disable relay mode (default: 0)
-- `TOR_NICKNAME`: Nickname for the Tor relay (default: TorPrivoxyAlpineRelay)
-- `TOR_BANDWIDTH_RATE`: Bandwidth rate limit for the Tor relay (default: 1000000)
-- `TOR_BANDWIDTH_BURST`: Bandwidth burst limit for the Tor relay (default: 2000000)
-- `TOR_EXIT_POLICY`: Exit policy for the Tor relay (default: "reject *:*")
-
-Example usage with custom configuration:
-
-```bash
-docker run -d -p 8118:8118 -p 9050:9050 \
-  -e PRIVOXY_LISTEN_ADDRESS=0.0.0.0:8080 \
-  -e PRIVOXY_ENABLE_COMPRESSION=1 \
-  -e TOR_SOCKS_PORT=9060 \
-  -e TOR_RELAY=1 \
-  -e TOR_NICKNAME=MyTorRelay \
-  rdsubhas/tor-privoxy-alpine
-```
+See `.env.example` for available configuration options.
 
 ### Dockerfile
 
