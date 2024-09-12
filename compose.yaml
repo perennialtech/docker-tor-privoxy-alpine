@@ -7,7 +7,26 @@ services:
       dockerfile: Dockerfile
     init: true
     ports:
-      - 8118:8118 # Privoxy HTTP(S) proxy
-      - 9050:9050 # Tor SOCKS5 proxy
-    env_file: .env
+      - name: privoxy-http
+        target: 8118
+        host_ip: 0.0.0.0
+        published: 8118
+        protocol: tcp
+      - name: tor-socks5
+        target: 9050
+        host_ip: 0.0.0.0
+        published: 9050
+        protocol: tcp
+    env_file:
+      - path: .env
+        required: true
     restart: unless-stopped
+    volumes:
+      - type: volume
+        source: tor-data
+        target: /var/lib/tor
+
+volumes:
+  tor-data:
+    driver: local
+    name: docker-tor-privoxy-alpine_tor-data

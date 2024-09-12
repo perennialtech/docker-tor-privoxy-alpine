@@ -4,40 +4,21 @@ EXPOSE 8118 9050
 
 ARG PRIVOXY_VERSION=3.0.34-r2
 ARG TOR_VERSION=0.4.8.12-r0
-ARG RUNIT_VERSION=2.1.2-r7
+ARG GOSU_VERSION=1.17-r5
 
-RUN apk --no-cache add \
-  privoxy=${PRIVOXY_VERSION} \
-  tor=${TOR_VERSION} \
-  runit=${RUNIT_VERSION} && \
-  adduser -D -u 1000 toruser
+RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
+    apk --no-cache add \
+    privoxy=${PRIVOXY_VERSION} \
+    tor=${TOR_VERSION} \
+    gosu@edge=${GOSU_VERSION} && \
+    mkdir -p /etc/tor /etc/privoxy /var/lib/tor && \
+    chown -R 101:65533 /etc/tor /var/lib/tor && \
+    chown -R 100:101 /etc/privoxy
 
-# Default Privoxy configuration
-ENV PRIVOXY_LISTEN_ADDRESS=0.0.0.0:8118 \
-  PRIVOXY_FORWARD_SOCKS5=/localhost:9050 \
-  PRIVOXY_TOGGLE=1 \
-  PRIVOXY_ENABLE_REMOTE_TOGGLE=0 \
-  PRIVOXY_ENABLE_EDIT_ACTIONS=0 \
-  PRIVOXY_ENABLE_COMPRESSION=0 \
-  PRIVOXY_ACCEPT_INTERCEPTED_REQUESTS=0 \
-  PRIVOXY_BUFFER_LIMIT=4096 \
-  PRIVOXY_ENABLE_PROXY_AUTHENTICATION_FORWARDING=0
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Default Tor configuration
-ENV TOR_SOCKS_PORT=9050 \
-  TOR_CONTROL_PORT=9051 \
-  TOR_DNS_PORT=5353 \
-  TOR_RELAY=0 \
-  TOR_NICKNAME=torPrivoxy \
-  TOR_BANDWIDTH_RATE=1000000 \
-  TOR_BANDWIDTH_BURST=2000000 \
-  TOR_EXIT_POLICY="reject *:*"
+ENTRYPOINT ["/entrypoint.sh"]
 
 HEALTHCHECK --interval=60s --timeout=15s --start-period=20s \
-  CMD nc -z localhost 8118 || exit 1
-
-USER toruser
-
-COPY service /etc/service/
-
-CMD ["runsvdir", "/etc/service"]
+  CMD nc -z 127.0.0.1 8118 || exit 1
