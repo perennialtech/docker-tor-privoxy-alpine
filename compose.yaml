@@ -1,0 +1,13 @@
+services:
+  docker-tor-privoxy-alpine:
+    container_name: docker-tor-privoxy-alpine
+    hostname: docker-tor-privoxy-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    ports:
+      - 8118:8118 # Privoxy HTTP(S) proxy
+      - 9050:9050 # Tor SOCKS5 proxy
+    env_file: .env
+    restart: unless-stopped
