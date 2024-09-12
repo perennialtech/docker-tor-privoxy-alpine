@@ -1,5 +1,27 @@
-*~
-*.swp
-.git*
-.vagrant*
-*.DS_Store
+# Git files
+.git
+.gitignore
+
+# Docker files
+compose.yaml
+
+# Environment files
+.env
+.env.*
+
+# Markdown files
+*.md
+
+# License file
+LICENSE
+
+# Any log files
+*.log
+
+# Editor specific files
+.vscode
+.idea
+
+# OS specific files
+.DS_Store
+Thumbs.db
