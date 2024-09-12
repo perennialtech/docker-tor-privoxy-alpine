@@ -1,10 +1,14 @@
 # multi-tor-proxy
 
-A Docker image that combines multiple Tor instances, HAProxy for load balancing, and Privoxy on Alpine Linux, providing a scalable proxy setup with enhanced routing capabilities and Tor data persistence.
+This project provides a Docker container that combines multiple Tor instances with HAProxy for load balancing and Privoxy for HTTP proxy functionality. The setup is based on Alpine Linux, offering a lightweight and efficient solution for routing traffic through the Tor network.
 
-## Project Overview
+## Architecture
 
-This project offers a Docker container that integrates multiple Tor instances, HAProxy for load balancing, and Privoxy on an Alpine Linux base. It's designed to provide a scalable, small-footprint proxy solution that can be easily deployed using Docker, with the added benefit of Tor data persistence across container restarts.
+The container orchestrates the following components:
+
+1. Multiple Tor instances
+2. HAProxy for load balancing across Tor instances
+3. Privoxy as an HTTP proxy frontend
 
 ```mermaid
 graph LR
@@ -24,110 +28,119 @@ graph LR
 ## Components
 
 - **Base Image**: Alpine Linux 3.20.3
-- **Tor**: Multiple instances of the Onion routing network for secure internet access
-- **HAProxy**: Load balancer to distribute traffic across Tor instances
-- **Privoxy**: Non-caching web proxy with advanced filtering capabilities
-- **gosu**: Lightweight tool to step down from root and run processes as non-privileged users
-- **Persistent Volume**: For storing Tor data across container restarts
+- **Tor**: Version 0.4.8.12-r0
+- **HAProxy**: Version 2.8.10-r0
+- **Privoxy**: Version 3.0.34-r2
+- **gosu**: Version 1.17-r5 (from Alpine edge/testing repository)
+
+## Features
+
+- Multiple Tor instances for improved performance and anonymity
+- HAProxy load balancing among Tor instances
+- Privoxy for HTTP/HTTPS proxy functionality and advanced filtering
+- Persistent Tor data storage using Docker volumes
+- Configurable via environment variables
+- Non-root execution of Tor and Privoxy processes using gosu
 
 ## Usage
 
-To run the container with default settings and Tor data persistence:
+1. Clone this repository:
 
-```bash
-docker compose up -d
-```
+   ```
+   git clone https://github.com/yourusername/docker-tor-privoxy-alpine.git
+   cd docker-tor-privoxy-alpine
+   ```
 
-This command will create a Docker volume named `tor-data` to store Tor's data persistently.
+2. Create a `.env` file based on the provided `.env.example`:
 
-To use the proxy:
+   ```
+   cp .env.example .env
+   ```
 
-```bash
-curl --proxy 127.0.0.1:8118 https://example.com
-```
+   Adjust the variables in `.env` according to your requirements.
+
+3. Start the container using Docker Compose:
+
+   ```
+   docker compose up -d
+   ```
+
+   This command will build the image if it doesn't exist and start the container in detached mode.
+
+4. Use the proxy:
+
+   ```
+   curl --proxy 127.0.0.1:8118 https://check.torproject.org
+   ```
 
 ## Configuration
 
-The container is configured using environment variables. These can be set in the `.env` file or passed directly to the container. See `.env.example` for available configuration options.
+The container is configured using environment variables. These can be set in the `.env` file or passed directly to the container. Key configuration options include:
 
-### Dockerfile
+- `NUM_TOR_INSTANCES`: Number of Tor instances to run (default: 3)
+- `PRIVOXY_LISTEN_ADDRESS`: Address and port for Privoxy (default: "0.0.0.0:8118")
+- `TOR_RELAY`: Enable/disable relay mode (default: 0)
+- `TOR_NICKNAME`: Nickname for the Tor relay (default: "torPrivoxy")
+- `TOR_BANDWIDTH_RATE`: Bandwidth rate limit for the Tor relay (default: "1000000")
+- `TOR_BANDWIDTH_BURST`: Bandwidth burst limit for the Tor relay (default: "2000000")
+- `TOR_EXIT_POLICY`: Exit policy for the Tor relay (default: "reject *:*")
 
-The Dockerfile specifies the following:
+Refer to the `.env.example` file for a complete list of configuration options.
 
-- Base image: Alpine 3.20.3
-- Exposed ports: 8118 and 8050
-- Installed packages: privoxy, tor, gosu, haproxy
-- Copies entrypoint.sh script and haproxy.cfg
-- Sets default environment variables for Privoxy, Tor, and HAProxy configuration
-- ENTRYPOINT: /entrypoint.sh
+## Docker Compose
 
-### entrypoint.sh
+The project includes a `compose.yaml` file for easy deployment using Docker Compose. Key features of the Compose configuration:
 
-The entrypoint script handles the following:
+- Container name and hostname: `multi-tor-proxy`
+- Builds the image from the local Dockerfile
+- Maps ports 8118 (Privoxy) and 8050 (HAProxy) to the host
+- Uses the `.env` file for environment variables
+- Configures automatic restart (`unless-stopped`)
+- Creates and uses a named volume `multi-tor-proxy_tor-data` for persistent Tor data
 
-- Generates Tor, Privoxy, and HAProxy configuration files based on environment variables
-- Sets correct permissions for Tor and Privoxy directories
-- Starts multiple Tor instances, HAProxy, and Privoxy services using gosu for privilege de-escalation
+To stop the container:
 
-gosu is used to run Tor and Privoxy as their respective non-root users:
-
-```sh
-for i in $(seq 0 $((NUM_TOR_INSTANCES - 1))); do
-    gosu tor tor -f /etc/tor/torrc_$i &
-done
-
-haproxy -f /etc/haproxy/haproxy.cfg &
-
-exec gosu privoxy privoxy --no-daemon /etc/privoxy/config
+```
+docker compose down
 ```
 
-This ensures that the services run with the least privileges necessary, enhancing security.
+To stop the container and remove the volume:
 
-### Privoxy
-
-- **Config file**: Dynamically generated based on environment variables
-- **Listen address**: Configurable via `PRIVOXY_LISTEN_ADDRESS`
-- **Forward to HAProxy**: Configured to forward to HAProxy on port 8050
-
-### HAProxy
-
-- **Config file**: Dynamically generated based on the number of Tor instances
-- **Frontend**: Listens on port 8050
-- **Backend**: Roundrobin load balancing between Tor instances
-
-### Tor
-
-- **Config files**: Dynamically generated for each instance based on environment variables
-- **SOCKS ports**: Automatically assigned (9050, 9051, 9052, etc.)
-- **Data Directory**: Persistent storage in `/var/lib/tor/{instance_number}`, mapped to a Docker volume
+```
+docker compose down -v
+```
 
 ## Exposed Ports
 
 - 8118: Privoxy HTTP(S) proxy
 - 8050: HAProxy SOCKS5 proxy (load balances to multiple Tor instances)
 
-## Tor Data Persistence
+## Data Persistence
 
-Tor data for all instances is stored in a Docker volume named `tor-data`. This ensures that Tor's state, including its entry guards and other critical information, is preserved across container restarts.
-
-To manage the persistent Tor data:
-
-- **View volume information**: `docker volume inspect multi-tor-proxy_tor-data`
-- **Backup the data**: `docker run --rm -v tor-data:/data -v /path/on/host:/backup alpine tar cvf /backup/tor-data.tar /data`
-- **Restore from backup**: `docker run --rm -v tor-data:/data -v /path/on/host:/backup alpine sh -c "cd /data && tar xvf /backup/tor-data.tar --strip 1"`
-
-## Building
-
-To build the image yourself:
-
-```bash
-docker build -t multi-tor-proxy .
-```
+Tor data for all instances is stored in a Docker volume named `multi-tor-proxy_tor-data`. This ensures that Tor's state, including entry guards and other critical information, is preserved across container restarts.
 
 ## Security Considerations
 
-This project uses gosu to enhance security by running Tor and Privoxy as non-root users. This follows the principle of least privilege, reducing the potential impact of any security vulnerabilities in these services. The use of multiple Tor instances with HAProxy load balancing improves both performance and anonymity.
+- The container uses gosu to run Tor and Privoxy as non-root users, adhering to the principle of least privilege.
+- Multiple Tor instances with HAProxy load balancing improve both performance and anonymity.
+- The container is based on Alpine Linux, which has a smaller attack surface due to its minimal design.
+
+## Building
+
+To build the image locally without using Docker Compose:
+
+```
+docker build -t docker-tor-privoxy-alpine .
+```
 
 ## License
 
-This project is licensed under the MIT license. Refer to the LICENSE file in the repository for full details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome. Please submit pull requests or open issues on the project's GitHub repository.
+
+## Disclaimer
+
+This software is provided for educational and research purposes only. Ensure you comply with all relevant laws and regulations when using this software.
