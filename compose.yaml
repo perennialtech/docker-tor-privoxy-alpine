@@ -2,7 +2,7 @@ services:
   multi-tor-proxy:
     container_name: multi-tor-proxy
     hostname: multi-tor-proxy
-    image: ghcr.io/perennialtech/multi-tor-proxy:latest
+    image: ghcr.io/perennialtech/multi-tor-proxy:master
     # Uncomment to build from local repository
     # build:
     #   context: .
