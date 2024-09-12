@@ -1,4 +1,4 @@
-# MultiTorProxy
+# multi-tor-proxy
 
 A Docker image that combines multiple Tor instances, HAProxy for load balancing, and Privoxy on Alpine Linux, providing a scalable proxy setup with enhanced routing capabilities and Tor data persistence.
 
@@ -112,7 +112,7 @@ Tor data for all instances is stored in a Docker volume named `tor-data`. This e
 
 To manage the persistent Tor data:
 
-- **View volume information**: `docker volume inspect MultiTorProxy_tor-data`
+- **View volume information**: `docker volume inspect multi-tor-proxy_tor-data`
 - **Backup the data**: `docker run --rm -v tor-data:/data -v /path/on/host:/backup alpine tar cvf /backup/tor-data.tar /data`
 - **Restore from backup**: `docker run --rm -v tor-data:/data -v /path/on/host:/backup alpine sh -c "cd /data && tar xvf /backup/tor-data.tar --strip 1"`
 
@@ -121,7 +121,7 @@ To manage the persistent Tor data:
 To build the image yourself:
 
 ```bash
-docker build -t MultiTorProxy .
+docker build -t multi-tor-proxy .
 ```
 
 ## Security Considerations
