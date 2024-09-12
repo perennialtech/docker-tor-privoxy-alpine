@@ -6,6 +6,13 @@ A Docker image that combines Tor and Privoxy on Alpine Linux, providing a proxy 
 
 This project offers a Docker container that integrates Tor and Privoxy on an Alpine Linux base. It's designed to provide a small-footprint proxy solution that can be easily deployed using Docker.
 
+```mermaid
+graph LR
+    Client[Client] -->|HTTP/HTTPS| Privoxy[Privoxy :8118]
+    Privoxy -->|SOCKS5| Tor[Tor :9050]
+    Tor --> Internet[Internet]
+```
+
 ## Components
 
 - **Base Image**: Alpine Linux 3.7
