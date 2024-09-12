@@ -1,15 +1,15 @@
-name: Docker
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
+name: Build and Push Docker Image
 
 on:
   push:
     branches: [ "master" ]
     # Publish semver tags as releases.
     tags: [ 'v*.*.*' ]
+    paths-ignore:
+      - 'LICENSE'
+      - 'README.md'
+      - 'compose.yaml'
+  workflow_dispatch:  # Allow manual triggering of the workflow
 
 env:
   # Use docker.io for Docker Hub if empty
