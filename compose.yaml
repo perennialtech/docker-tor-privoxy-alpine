@@ -3,10 +3,9 @@ services:
     container_name: multi-tor-proxy
     hostname: multi-tor-proxy
     image: ghcr.io/perennialtech/multi-tor-proxy:master
-    # Uncomment to build from local repository
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
     init: true
     ports:
       - name: privoxy-http
