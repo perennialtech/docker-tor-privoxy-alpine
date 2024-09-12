@@ -1,2 +1,23 @@
 #!/bin/sh
-tor -f ./torrc
+
+# Generate Tor configuration file
+cat << EOF > /etc/tor/torrc
+SocksPort ${TOR_SOCKS_PORT}
+ControlPort ${TOR_CONTROL_PORT}
+DNSPort ${TOR_DNS_PORT}
+
+# Relay settings
+BridgeRelay ${TOR_RELAY}
+Nickname ${TOR_NICKNAME}
+RelayBandwidthRate ${TOR_BANDWIDTH_RATE}
+RelayBandwidthBurst ${TOR_BANDWIDTH_BURST}
+ExitPolicy ${TOR_EXIT_POLICY}
+
+# Other common settings
+DataDirectory /var/lib/tor
+User tor
+Log notice stdout
+EOF
+
+# Start Tor
+exec tor -f /etc/tor/torrc
