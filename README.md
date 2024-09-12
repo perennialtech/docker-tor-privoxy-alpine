@@ -136,7 +136,7 @@ Tor data for all instances is stored in a Docker volume named `multi-tor-proxy_t
 To build the image locally without using Docker Compose:
 
 ```sh
-docker build -t docker-tor-privoxy-alpine .
+docker build -t multi-tor-proxy .
 ```
 
 ## License
