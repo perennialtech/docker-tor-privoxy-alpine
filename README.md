@@ -21,6 +21,7 @@ graph LR
     Internet[Internet]
 
     Client <-->|HTTP| Privoxy
+    Client <-->|SOCKS5| HAProxy
     Privoxy <-->|SOCKS5| HAProxy
     HAProxy <-->|SOCKS5| Tor1
     HAProxy <-->|SOCKS5| Tor2
