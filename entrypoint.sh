@@ -68,6 +68,7 @@ generate_haproxy_config
 for i in $(seq 0 $((NUM_TOR_INSTANCES - 1))); do
     generate_tor_config $i
     mkdir -p /var/lib/tor/$i
+    chown -R tor /var/lib/tor
 done
 
 # Start Privoxy
