@@ -1,7 +1,7 @@
 services:
-  docker-tor-privoxy-alpine:
-    container_name: docker-tor-privoxy-alpine
-    hostname: docker-tor-privoxy-alpine
+  MultiTorProxy:
+    container_name: MultiTorProxy
+    hostname: MultiTorProxy
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,10 +12,10 @@ services:
         host_ip: 0.0.0.0
         published: 8118
         protocol: tcp
-      - name: tor-socks5
-        target: 9050
+      - name: haproxy-socks5
+        target: 8050
         host_ip: 0.0.0.0
-        published: 9050
+        published: 8050
         protocol: tcp
     env_file:
       - path: .env
@@ -29,4 +29,4 @@ services:
 volumes:
   tor-data:
     driver: local
-    name: docker-tor-privoxy-alpine_tor-data
+    name: MultiTorProxy_tor-data
