@@ -1,6 +1,6 @@
 # multi-tor-proxy
 
-This project provides a Docker container that combines multiple Tor instances with HAProxy for load balancing and Privoxy for HTTP proxy functionality. The setup is based on Alpine Linux, offering a lightweight and efficient solution for routing traffic through the Tor network.
+This project provides a Docker container that combines multiple Tor instances with HAProxy for load balancing and Privoxy for HTTP proxy functionality. The setup is based on Alpine Linux.
 
 ## Architecture
 
@@ -20,18 +20,15 @@ graph LR
     Tor1 --> Internet[Internet]
     Tor2 --> Internet
     TorN --> Internet
-    Tor1 <-->|Persistent Data| Volume[Docker Volume]
-    Tor2 <-->|Persistent Data| Volume
-    TorN <-->|Persistent Data| Volume
 ```
 
 ## Components
 
-- **Base Image**: Alpine Linux 3.20.3
-- **Tor**: Version 0.4.8.12-r0
-- **HAProxy**: Version 2.8.10-r0
-- **Privoxy**: Version 3.0.34-r2
-- **gosu**: Version 1.17-r5 (from Alpine edge/testing repository)
+- **Alpine Linux**: 3.20.3
+- **Tor**: 0.4.8.12-r0
+- **HAProxy**: 2.8.10-r0
+- **Privoxy**: 3.0.34-r2
+- **gosu**: 1.17-r5 (from Alpine edge/testing repository)
 
 ## Features
 
@@ -46,14 +43,14 @@ graph LR
 
 1. Clone this repository:
 
-   ```
-   git clone https://github.com/yourusername/docker-tor-privoxy-alpine.git
-   cd docker-tor-privoxy-alpine
+   ```sh
+   git clone https://github.com/perennialtech/multi-tor-proxy.git
+   cd multi-tor-proxy
    ```
 
 2. Create a `.env` file based on the provided `.env.example`:
 
-   ```
+   ```sh
    cp .env.example .env
    ```
 
@@ -61,7 +58,7 @@ graph LR
 
 3. Start the container using Docker Compose:
 
-   ```
+   ```sh
    docker compose up -d
    ```
 
@@ -69,8 +66,8 @@ graph LR
 
 4. Use the proxy:
 
-   ```
-   curl --proxy 127.0.0.1:8118 https://check.torproject.org
+   ```sh
+   curl --proxy 127.0.0.1:8118 https://check.torproject.org/
    ```
 
 ## Configuration
@@ -93,54 +90,40 @@ The project includes a `compose.yaml` file for easy deployment using Docker Comp
 
 - Container name and hostname: `multi-tor-proxy`
 - Builds the image from the local Dockerfile
-- Maps ports 8118 (Privoxy) and 8050 (HAProxy) to the host
+- Maps ports `8118` (Privoxy) and `8050` (HAProxy) to the host
 - Uses the `.env` file for environment variables
 - Configures automatic restart (`unless-stopped`)
 - Creates and uses a named volume `multi-tor-proxy_tor-data` for persistent Tor data
 
 To stop the container:
 
-```
+```sh
 docker compose down
 ```
 
 To stop the container and remove the volume:
 
-```
+```sh
 docker compose down -v
 ```
 
 ## Exposed Ports
 
-- 8118: Privoxy HTTP(S) proxy
-- 8050: HAProxy SOCKS5 proxy (load balances to multiple Tor instances)
+- `8118`: Privoxy HTTP(S) proxy
+- `8050`: HAProxy SOCKS5 proxy (load balances to multiple Tor instances)
 
 ## Data Persistence
 
-Tor data for all instances is stored in a Docker volume named `multi-tor-proxy_tor-data`. This ensures that Tor's state, including entry guards and other critical information, is preserved across container restarts.
-
-## Security Considerations
-
-- The container uses gosu to run Tor and Privoxy as non-root users, adhering to the principle of least privilege.
-- Multiple Tor instances with HAProxy load balancing improve both performance and anonymity.
-- The container is based on Alpine Linux, which has a smaller attack surface due to its minimal design.
+Tor data for all instances is stored in a Docker volume named `multi-tor-proxy_tor-data`, persisting Tor's state across container restarts.
 
 ## Building
 
 To build the image locally without using Docker Compose:
 
-```
+```sh
 docker build -t docker-tor-privoxy-alpine .
 ```
 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions are welcome. Please submit pull requests or open issues on the project's GitHub repository.
-
-## Disclaimer
-
-This software is provided for educational and research purposes only. Ensure you comply with all relevant laws and regulations when using this software.
