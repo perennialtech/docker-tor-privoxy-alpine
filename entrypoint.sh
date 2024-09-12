@@ -8,12 +8,9 @@ generate_privoxy_config() {
 listen-address ${PRIVOXY_LISTEN_ADDRESS}
 forward-socks5 / localhost:8050 .
 toggle ${PRIVOXY_TOGGLE}
-enable-remote-toggle ${PRIVOXY_ENABLE_REMOTE_TOGGLE}
-enable-edit-actions ${PRIVOXY_ENABLE_EDIT_ACTIONS}
 accept-intercepted-requests ${PRIVOXY_ACCEPT_INTERCEPTED_REQUESTS}
 buffer-limit ${PRIVOXY_BUFFER_LIMIT}
 enable-proxy-authentication-forwarding ${PRIVOXY_ENABLE_PROXY_AUTHENTICATION_FORWARDING}
-logfile ${PRIVOXY_LOGFILE}
 debug ${PRIVOXY_DEBUG}
 EOF
     echo "Generated Privoxy config: $config_file"
