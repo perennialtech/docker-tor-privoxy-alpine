@@ -53,7 +53,6 @@ generate_tor_config() {
     local config_file="/etc/tor/torrc-$instance"
     cat << EOF > "$config_file"
 SocksPort 905$instance
-ControlPort 905$(($instance + 3))
 DNSPort 535$instance
 BridgeRelay ${TOR_RELAY}
 Nickname ${TOR_NICKNAME}$instance
