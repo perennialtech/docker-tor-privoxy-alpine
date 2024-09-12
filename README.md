@@ -43,6 +43,21 @@ graph LR
     TorN <--> Internet
 ```
 
+### Port Usage
+
+The application uses the following ports:
+
+| Service       | Port Type             | Port Number/Range                                        |
+| ------------- | --------------------- | -------------------------------------------------------- |
+| Privoxy       | HTTP proxy            | Set by `PRIVOXY_LISTEN_ADDRESS` (default: `8118`)        |
+| HAProxy       | Frontend SOCKS5 proxy | `8050`                                                   |
+| Tor Instances | SOCKS                 | `9050` to `905(N-1)`, where N is the number of instances |
+| Tor Instances | Control               | `9053` to `905(N+2)`, where N is the number of instances |
+| Tor Instances | DNS                   | `5350` to `535(N-1)`, where N is the number of instances |
+
+> [!NOTE]  
+> The exact number of ports used for Tor instances depends on the `NUM_TOR_INSTANCES` environment variable.
+
 ## Components
 
 - **Alpine Linux**: 3.20.3
@@ -107,7 +122,7 @@ The container is configured using environment variables. These can be set in the
 - `TOR_NICKNAME`: Nickname for the Tor relay (default: "torPrivoxy")
 - `TOR_BANDWIDTH_RATE`: Bandwidth rate limit for the Tor relay (default: "1000000")
 - `TOR_BANDWIDTH_BURST`: Bandwidth burst limit for the Tor relay (default: "2000000")
-- `TOR_EXIT_POLICY`: Exit policy for the Tor relay (default: "reject *:*")
+- `TOR_EXIT_POLICY`: Exit policy for the Tor relay (default: "reject _:_")
 
 Refer to the `.env.example` file for a complete list of configuration options.
 
@@ -133,11 +148,6 @@ To stop the container and remove the volume:
 ```sh
 docker compose down -v
 ```
-
-## Exposed Ports
-
-- `8118`: Privoxy HTTP proxy
-- `8050`: HAProxy SOCKS5 proxy (load balances to multiple Tor instances)
 
 ## Data Persistence
 
