@@ -2,32 +2,71 @@ services:
   multi-tor-proxy:
     container_name: multi-tor-proxy
     hostname: multi-tor-proxy
-    image: ghcr.io/perennialtech/multi-tor-proxy:master
+    image: ghcr.io/perennialtech/multi-tor-proxy:latest
     build:
       context: .
       dockerfile: Dockerfile
     init: true
+
     ports:
-      - name: privoxy-http
+      - name: http-connect
         target: 8118
-        host_ip: 0.0.0.0
+        host_ip: 127.0.0.1
         published: 8118
         protocol: tcp
-      - name: haproxy-socks5
+        app_protocol: http
+      - name: socks5
         target: 8050
-        host_ip: 0.0.0.0
+        host_ip: 127.0.0.1
         published: 8050
         protocol: tcp
+
     env_file:
       - path: .env
-        required: true
-    restart: unless-stopped
+        required: false
+
     volumes:
       - type: volume
         source: tor-data
         target: /var/lib/tor
 
+    # The entrypoint writes generated torrc/haproxy configs at startup.
+    # Keep the image filesystem read-only and provide only the needed writable paths.
+    read_only: true
+    tmpfs:
+      - /etc/haproxy:size=8m,mode=0755,noexec,nosuid,nodev
+      - /etc/tor:size=8m,mode=0755,noexec,nosuid,nodev
+      - /run:size=16m,mode=0755,noexec,nosuid,nodev
+      - /tmp:size=64m,mode=1777,noexec,nosuid,nodev
+
+    # The current entrypoint starts as root so it can chown /var/lib/tor
+    # and then drop privileges with su-exec for Tor and HAProxy.
+    user: "0:0"
+
+    cap_drop:
+      - ALL
+    cap_add:
+      # Needed by the current entrypoint for chowning the Tor data volume.
+      - CHOWN
+      # Needed because Tor data dirs may be 0700 from previous runs.
+      - DAC_OVERRIDE
+      # Needed by su-exec to drop from root to tor/haproxy users.
+      - SETGID
+      - SETUID
+
+    security_opt:
+      - no-new-privileges:true
+
+    restart: unless-stopped
+    stop_grace_period: 15s
+    pids_limit: 512
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   tor-data:
     driver: local
-    name: multi-tor-proxy_tor-data

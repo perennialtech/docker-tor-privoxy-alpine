@@ -1,31 +1,29 @@
-FROM alpine:3.20.3
+# 3.24.1
+FROM alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 
-EXPOSE 8118 8050
+ARG CURL_VERSION=8.20.0-r1
+ARG HAPROXY_VERSION=3.4.0-r0
+ARG SU_EXEC_VERSION=0.3-r0
+ARG TOR_VERSION=0.4.9.10-r0
 
-ARG PRIVOXY_VERSION=3.0.34-r2
-ARG TOR_VERSION=0.4.8.12-r0
-ARG GOSU_VERSION=1.17-r5
-ARG HAPROXY_VERSION=2.8.10-r0
+# Fixed high UIDs/GIDs keep service ownership predictable across platforms.
+RUN addgroup -S -g 10002 haproxy && \
+    adduser -S -D -H -u 10002 -G haproxy haproxy && \
+    addgroup -S -g 10003 tor && \
+    adduser -S -D -H -u 10003 -G tor tor
 
-# Manual UID/GID assignment to prevent conflicts with tor's default UID of 101
-RUN addgroup -g 10001 privoxy && \
-    adduser -D -u 10001 -G privoxy privoxy && \
-    addgroup -g 10002 haproxy && \
-    adduser -D -u 10002 -G haproxy haproxy && \
-    addgroup -g 10003 tor && \
-    adduser -D -u 101 -G tor tor
-
-RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-    apk --no-cache add \
-    privoxy=${PRIVOXY_VERSION} \
+RUN apk --no-cache add \
+    curl=${CURL_VERSION} \
     haproxy=${HAPROXY_VERSION} \
-    tor=${TOR_VERSION} \
-    gosu@edge=${GOSU_VERSION}
+    su-exec=${SU_EXEC_VERSION} \
+    tor=${TOR_VERSION}
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+STOPSIGNAL SIGTERM
+
 ENTRYPOINT ["/entrypoint.sh"]
 
-HEALTHCHECK --interval=60s --timeout=15s --start-period=20s \
-  CMD nc -z 127.0.0.1 8118 || exit 1
+HEALTHCHECK --interval=60s --timeout=30s --start-period=180s --retries=3 \
+  CMD curl --fail --silent --show-error --max-time 20 --proxy http://127.0.0.1:8118 https://check.torproject.org/api/ip | grep -q '"IsTor"[[:space:]]*:[[:space:]]*true' || exit 1

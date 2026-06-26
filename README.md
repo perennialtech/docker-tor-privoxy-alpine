@@ -1,158 +1,120 @@
 # multi-tor-proxy
 
-This project provides a Docker container that combines multiple Tor instances with HAProxy for load balancing and Privoxy for HTTP proxy functionality. The setup is based on Alpine Linux.
+multi-tor-proxy is a Dockerized Tor proxy stack that provides:
 
-A Docker image for this project is automatically built and pushed to GitHub Container Registry (ghcr.io) via GitHub Actions. You can pull the latest image using:
-
-```sh
-docker pull ghcr.io/perennialtech/multi-tor-proxy:latest
-```
-
-To build the image locally:
-
-```sh
-docker build -t multi-tor-proxy .
-```
-
-## Architecture
-
-The container orchestrates the following components:
-
-1. Multiple Tor instances
-2. HAProxy for load balancing across Tor instances
-3. Privoxy as an HTTP proxy frontend
+- an [HTTP CONNECT](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods/CONNECT) proxy through [HAProxy](https://www.haproxy.org/) and [Tor `HTTPTunnelPort`](https://2019.www.torproject.org/docs/tor-manual.html.en#HTTPTunnelPort)
+- a [SOCKS5](https://en.wikipedia.org/wiki/SOCKS) proxy through HAProxy and Tor `SocksPort`
+- multiple Tor client instances behind the proxy layer
 
 ```mermaid
 graph LR
     Client[Client]
-    Privoxy[Privoxy :8118]
-    HAProxy[HAProxy :8050]
-    Tor1[Tor Instance 1]
-    Tor2[Tor Instance 2]
-    TorN[Tor Instance N]
+    HAProxyHTTP[HAProxy HTTP CONNECT TCP balancer :8118]
+    HAProxySOCKS[HAProxy SOCKS5 TCP balancer :8050]
+    Tor0HTTP[Tor instance 0 HTTPTunnelPort :9051]
+    Tor1HTTP[Tor instance 1 HTTPTunnelPort :9054]
+    TorLastHTTP["Tor instance N-1 HTTPTunnelPort :9051 + 3*(N-1)"]
+    Tor0SOCKS[Tor instance 0 SocksPort :9050]
+    Tor1SOCKS[Tor instance 1 SocksPort :9053]
+    TorLastSOCKS["Tor instance N-1 SocksPort :9050 + 3*(N-1)"]
     Internet[Internet]
 
-    Client <-->|HTTP| Privoxy
-    Client <-->|SOCKS5| HAProxy
-    Privoxy <-->|SOCKS5| HAProxy
-    HAProxy <-->|SOCKS5| Tor1
-    HAProxy <-->|SOCKS5| Tor2
-    HAProxy <-->|SOCKS5| TorN
-    Tor1 <--> Internet
-    Tor2 <--> Internet
-    TorN <--> Internet
+    Client <-->|HTTP CONNECT| HAProxyHTTP
+    Client <-->|SOCKS5 over TCP| HAProxySOCKS
+    HAProxyHTTP <-->|TCP load balancing| Tor0HTTP
+    HAProxyHTTP <-->|TCP load balancing| Tor1HTTP
+    HAProxyHTTP <-->|TCP load balancing| TorLastHTTP
+    HAProxySOCKS <-->|TCP load balancing| Tor0SOCKS
+    HAProxySOCKS <-->|TCP load balancing| Tor1SOCKS
+    HAProxySOCKS <-->|TCP load balancing| TorLastSOCKS
+    Tor0HTTP <--> Internet
+    Tor1HTTP <--> Internet
+    TorLastHTTP <--> Internet
+    Tor0SOCKS <--> Internet
+    Tor1SOCKS <--> Internet
+    TorLastSOCKS <--> Internet
 ```
 
-### Port Usage
+The `8118` listener is backed by Tor `HTTPTunnelPort`. It supports HTTP `CONNECT` tunneling, which is suitable for HTTPS proxy requests.
 
-The application uses the following ports:
+Internal Tor listener ports are allocated in three-port blocks per instance. Instance `i` uses `SocksPort` `9050 + 3*i` and `HTTPTunnelPort` `9051 + 3*i`. The third slot in each block is intentionally unused, and the container does not run or expose a Tor `DNSPort`.
 
-| Service       | Port Type             | Port Number/Range                                        |
-| ------------- | --------------------- | -------------------------------------------------------- |
-| Privoxy       | HTTP proxy            | Set by `PRIVOXY_LISTEN_ADDRESS` (default: `8118`)        |
-| HAProxy       | Frontend SOCKS5 proxy | `8050`                                                   |
-| Tor Instances | SOCKS                 | `9050` to `905(N-1)`, where N is the number of instances |
-| Tor Instances | Control               | `9053` to `905(N+2)`, where N is the number of instances |
-| Tor Instances | DNS                   | `5350` to `535(N-1)`, where N is the number of instances |
+It is not a full plaintext HTTP forwarding proxy. For non-HTTPS URLs, use the SOCKS5 listener instead when your client supports it.
 
-> [!NOTE]  
-> The exact number of ports used for Tor instances depends on the `NUM_TOR_INSTANCES` environment variable.
+When using the SOCKS5 proxy directly, make sure your client sends hostnames through the proxy instead of resolving them locally.
 
-## Components
+With curl, use `socks5h://` or `--socks5-hostname`.
 
-- **Alpine Linux**: 3.20.3
-- **Tor**: 0.4.8.12-r0
-- **HAProxy**: 2.8.10-r0
-- **Privoxy**: 3.0.34-r2
-- **gosu**: 1.17-r5 (from Alpine edge/testing repository)
+## Load balancing and rotation semantics
 
-## Features
+HAProxy balances each new TCP connection across the Tor backends with round-robin. It does not rebalance individual HTTP requests inside a reused TCP connection.
 
-- Multiple Tor instances for improved performance and anonymity
-- HAProxy load balancing among Tor instances
-- Privoxy for HTTP proxy functionality and advanced filtering
-- Persistent Tor data storage using Docker volumes
-- Configurable via environment variables
-- Non-root execution of Tor and Privoxy processes using gosu
+Tor still controls circuit construction and stream attachment. `NewCircuitPeriod`, `MaxCircuitDirtiness`, and `CircuitBuildTimeout` influence Tor's circuit behavior, but they do not guarantee a fresh circuit or a fresh exit IP for every request.
 
-## Usage
+Client connection pooling matters. Browsers, HTTP libraries, package managers, and scraping tools often reuse proxy connections, so many application-level requests may travel through the same HAProxy backend and the same Tor circuit until the client opens a new connection or Tor decides to attach new streams elsewhere.
 
-1. Clone this repository:
+Established proxy tunnels have a fixed one-hour idle timeout at the HAProxy layer.
 
-   ```sh
-   git clone https://github.com/perennialtech/multi-tor-proxy.git
-   cd multi-tor-proxy
-   ```
+## Quick start
 
-2. Create a `.env` file based on the provided `.env.example`:
+Configuration environment variables are optional. Runtime defaults are defined in `entrypoint.sh`, so unset or blank values use those code defaults.
 
-   ```sh
-   cp .env.example .env
-   ```
-
-   Adjust the variables in `.env` according to your requirements.
-
-3. Start the container using Docker Compose:
-
-   ```sh
-   docker compose up -d
-   ```
-
-   This command will build the image if it doesn't exist and start the container in detached mode.
-
-4. Use the Privoxy HTTP proxy:
-
-   ```sh
-   curl --proxy http://127.0.0.1:8118 https://am.i.mullvad.net/json
-   ```
-
-5. Use the HAProxy SOCKS5 proxy:
-
-   ```sh
-   curl --proxy socks5://127.0.0.1:8050 https://am.i.mullvad.net/json
-   ```
-
-## Configuration
-
-The container is configured using environment variables. These can be set in the `.env` file or passed directly to the container. Key configuration options include:
-
-- `NUM_TOR_INSTANCES`: Number of Tor instances to run (default: 3)
-- `PRIVOXY_LISTEN_ADDRESS`: Address and port for Privoxy (default: "0.0.0.0:8118")
-- `TOR_RELAY`: Enable/disable relay mode (default: 0)
-- `TOR_NICKNAME`: Nickname for the Tor relay (default: "torPrivoxy")
-- `TOR_BANDWIDTH_RATE`: Bandwidth rate limit for the Tor relay (default: "1000000")
-- `TOR_BANDWIDTH_BURST`: Bandwidth burst limit for the Tor relay (default: "2000000")
-- `TOR_EXIT_POLICY`: Exit policy for the Tor relay (default: "reject _:_")
-
-Refer to the `.env.example` file for a complete list of configuration options.
-
-## Docker Compose
-
-The project includes a `compose.yaml` file for easy deployment using Docker Compose. Key features of the Compose configuration:
-
-- Container name and hostname: `multi-tor-proxy`
-- Builds the image from the local Dockerfile
-- Maps ports `8118` (Privoxy) and `8050` (HAProxy) to the host
-- Uses the `.env` file for environment variables
-- Configures automatic restart (`unless-stopped`)
-- Creates and uses a named volume `multi-tor-proxy_tor-data` for persistent Tor data
-
-To stop the container:
+Run with code defaults:
 
 ```sh
-docker compose down
+docker compose up -d
 ```
 
-To stop the container and remove the volume:
+Create `.env` only when you want overrides. `.env.example` lists supported variables and validation notes, but intentionally does not duplicate the actual defaults.
 
 ```sh
-docker compose down -v
+cp .env.example .env
+$EDITOR .env
+docker compose up -d --force-recreate
 ```
 
-## Data Persistence
+### Docker Compose
 
-Tor data for all instances is stored in a Docker volume named `multi-tor-proxy_tor-data`, persisting Tor's state across container restarts.
+```sh
+git clone https://github.com/perennialtech/multi-tor-proxy.git
+cd multi-tor-proxy
+docker compose up -d
+```
+
+### `docker run`
+
+```sh
+docker volume create tor-data
+
+docker run -d \
+  --name multi-tor-proxy \
+  --hostname multi-tor-proxy \
+  --init \
+  --restart unless-stopped \
+  --publish 127.0.0.1:8118:8118/tcp \
+  --publish 127.0.0.1:8050:8050/tcp \
+  --volume tor-data:/var/lib/tor \
+  ghcr.io/perennialtech/multi-tor-proxy:latest
+```
+
+For overrides, create `.env` from `.env.example` and add `--env-file .env` to the command.
+
+## Test the proxy
+
+HTTP CONNECT proxy for HTTPS requests:
+
+```sh
+curl --proxy http://127.0.0.1:8118 https://check.torproject.org/api/ip
+```
+
+SOCKS5 proxy with remote DNS:
+
+```sh
+curl --proxy socks5h://127.0.0.1:8050 https://check.torproject.org/api/ip
+```
+
+The response should indicate that the request came through Tor.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
