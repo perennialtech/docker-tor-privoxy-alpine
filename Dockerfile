@@ -1,10 +1,10 @@
 # 3.24.1
 FROM alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 
-ARG CURL_VERSION=8.20.0-r1
-ARG HAPROXY_VERSION=3.4.0-r0
+ARG CURL_VERSION=8.21.0-r0
+ARG HAPROXY_VERSION=3.4.1-r0
 ARG SU_EXEC_VERSION=0.3-r0
-ARG TOR_VERSION=0.4.9.10-r0
+ARG TOR_VERSION=0.4.9.11-r0
 
 # Fixed high UIDs/GIDs keep service ownership predictable across platforms.
 RUN addgroup -S -g 10002 haproxy && \
